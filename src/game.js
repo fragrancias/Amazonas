@@ -120,9 +120,11 @@ function animate() {
     const moveX = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
 
     if (moveX !== 0 || moveZ !== 0) {
-        playerGroup.position.x += (moveX - moveZ) * 0.1;
-        playerGroup.position.z += (moveX + moveZ) * 0.1;
-        playerGroup.rotation.y = Math.atan2(moveX - moveZ, moveX + moveZ);
+        const deltaX = (moveX + moveZ) * 0.1;
+        const deltaZ = (moveZ - moveX) * 0.1;
+        playerGroup.position.x += deltaX;
+        playerGroup.position.z += deltaZ;
+        playerGroup.rotation.y = Math.atan2(deltaX, deltaZ);
         walk += 0.2;
         leftLeg.rotation.x = Math.sin(walk) * 0.5;
         rightLeg.rotation.x = Math.cos(walk) * 0.5;
