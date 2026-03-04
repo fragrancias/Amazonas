@@ -118,50 +118,63 @@ function createFootprintTrail(startPos) {
     }
 }
 
-function createEnemy(x, z) {
+function createEnemy(x, z, type = 'rifle') {
     const enemy = new THREE.Group();
     const legMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
     const armMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c });
     const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), legMat);
     lLeg.position.set(-0.15, 0.35, 0); enemy.add(lLeg);
     const rLeg = lLeg.clone(); rLeg.position.set(0.15, 0.35, 0); enemy.add(rLeg);
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.4), new THREE.MeshStandardMaterial({ color: type === 'knife' ? 0x224422 : 0x111111 }));
     body.position.y = 1.15; enemy.add(body);
     const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.7, 0.18), armMat);
     lArm.position.set(-0.4, 1.2, 0); enemy.add(lArm);
     const rArm = lArm.clone(); rArm.position.set(0.4, 1.2, 0.2); enemy.add(rArm);
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.35), armMat);
     head.position.y = 1.7; enemy.add(head);
-    const beret = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.4), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+    const beret = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.4), new THREE.MeshStandardMaterial({ color: type === 'knife' ? 0x8b0000 : 0x000000 }));
     beret.position.y = 1.95; beret.rotation.z = -0.2; enemy.add(beret);
-    const rifle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 1.0), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-    rifle.position.set(0.45, 1.1, 0.4); enemy.add(rifle);
+
+    let weapon;
+    if (type === 'knife') {
+        weapon = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.4), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+        weapon.position.set(0.45, 1.1, 0.2);
+    } else {
+        weapon = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 1.0), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+        weapon.position.set(0.45, 1.1, 0.4);
+    }
+    enemy.add(weapon);
+
     const hbContainer = new THREE.Group();
     hbContainer.add(new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 })));
     const barFill = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.1), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
     barFill.position.z = 0.01; hbContainer.add(barFill);
-    healthBarContainer = hbContainer; // global fix if needed
     hbContainer.position.y = 2.2; enemy.add(hbContainer);
     enemy.position.set(x, 0, z);
-    enemy.userData = { maxHealth: 60, health: 60, lastShot: 0, animTime: Math.random() * 10, lLeg, rLeg, lArm, rArm, barFill };
+    enemy.userData = { type, maxHealth: 60, health: 60, lastShot: 0, animTime: Math.random() * 10, lLeg, rLeg, lArm, rArm, barFill };
     scene.add(enemy); enemies.push(enemy);
 }
 
 function spawnEntities() {
     enemies.forEach(e => scene.remove(e)); enemies = [];
+
+    // Guardas do Artefato (10 fixos)
     for (let i = 0; i < 10; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = 8 + Math.random() * 22;
-        createEnemy(artifactPos.x + Math.cos(angle) * dist, artifactPos.z + Math.sin(angle) * dist);
+        createEnemy(artifactPos.x + Math.cos(angle) * dist, artifactPos.z + Math.sin(angle) * dist, 'rifle');
     }
-    for (let i = 0; i < 190; i++) {
+
+    // Inimigos da Floresta (100 totais: 50 rifle / 50 faca)
+    for (let i = 0; i < 100; i++) {
+        const type = i < 50 ? 'rifle' : 'knife';
         const angle = Math.random() * Math.PI * 2;
         const dist = 40 + Math.random() * 340;
         const ex = artifactPos.x + Math.cos(angle) * dist;
         const ez = artifactPos.z + Math.sin(angle) * dist;
-        // Evitar spawnar em cima da posição atual do player (dinâmico)
-        if (Math.abs(ez - playerGroup.position.z) < 15 && Math.abs(ex - playerGroup.position.x) < 15) { i--; continue; }
-        createEnemy(ex, ez);
+        // Evitar spawnar em cima do player
+        if (new THREE.Vector3(ex, 0, ez).distanceTo(playerGroup.position) < 15) { i--; continue; }
+        createEnemy(ex, ez, type);
     }
 }
 
@@ -189,11 +202,18 @@ function spawnTraps() {
     }
 }
 
-function shootBullet(isPlayer, startPos, direction) {
-    const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: isPlayer ? 0xffff00 : 0xff0000 }));
-    bullet.position.copy(startPos);
-    const bd = { mesh: bullet, direction: direction.clone().normalize(), speed: 0.8, isPlayer, life: 100 };
-    scene.add(bullet);
+function shootBullet(isPlayer, startPos, direction, type = 'bullet') {
+    let mesh;
+    if (type === 'knife') {
+        mesh = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), new THREE.MeshBasicMaterial({ color: 0xcccccc }));
+        mesh.rotation.x = Math.PI / 2;
+    } else {
+        mesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: isPlayer ? 0xffff00 : 0xff0000 }));
+    }
+    mesh.position.copy(startPos);
+    const speed = type === 'knife' ? 0.6 : 0.8;
+    const bd = { mesh, direction: direction.clone().normalize(), speed, isPlayer, life: 100, type };
+    scene.add(mesh);
     if (isPlayer) bullets.push(bd); else enemyBullets.push(bd);
 }
 
@@ -208,7 +228,7 @@ function openDeathScreen() {
         <h1 style="color: #ef4444; font-size: 4rem; margin-bottom:10px;">MISSION FAILED</h1>
         <p style="font-size:1.2rem;">Luke "Wolf" fell in combat. Repositioning in field...</p>
         ${penaltyMsg}
-        <p style="color:#aaa;">Current Goal: Reach the artifact at ${Math.abs(artifactPos.z)}m</p>
+        <p style="color:#aaa;">Current Goal: Reach the artifact at ${Math.floor(Math.abs(playerGroup.position.z - artifactPos.z))}m</p>
         <button onclick="resetGame()"
             style="margin-top: 30px; padding: 15px 30px; font-size: 1.4rem; cursor: pointer; background: #166534; color: white; border: none; border-radius: 8px; font-weight:bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">Try Again</button>
     `;
@@ -226,7 +246,7 @@ function respawnPlayer() {
     // Look for a safe spot away from trees
     while (!safeSpawn && attempts < 50) {
         rx = (Math.random() - 0.5) * 40;
-        rz = penalty + (Math.random() - 0.5) * 20;
+        rz = 100 + penalty + (Math.random() - 0.5) * 20;
 
         // Check if this spot overlaps with a tree (0.7 radius + 0.8 safety margin)
         let collision = false;
@@ -387,8 +407,11 @@ function animate() {
     });
     enemyBullets.forEach((b) => {
         b.mesh.position.addScaledVector(b.direction, b.speed); b.life--;
+        if (b.type === 'knife') {
+            b.mesh.rotation.z += 0.3; // Rotação da faca no ar
+        }
         if (b.mesh.position.distanceTo(playerGroup.position.clone().add(new THREE.Vector3(0, 1, 0))) < 0.8) {
-            playerHealth -= 10; b.life = 0;
+            playerHealth -= b.type === 'knife' ? 15 : 10; b.life = 0;
             document.getElementById('health-bar').style.width = (playerHealth / playerMaxHealth * 100) + '%';
         }
     });
@@ -414,8 +437,8 @@ function animate() {
             if (d > 12) {
                 en.position.addScaledVector(playerGroup.position.clone().sub(en.position).normalize(), 0.07);
                 ud.animTime += delta * 12; ud.lLeg.rotation.x = Math.sin(ud.animTime) * 0.5; ud.rLeg.rotation.x = -Math.sin(ud.animTime) * 0.5;
-            } else if (Date.now() - ud.lastShot > 1600) {
-                shootBullet(false, en.position.clone().add(new THREE.Vector3(0, 1.5, 0)), playerGroup.position.clone().sub(en.position).normalize());
+            } else if (Date.now() - ud.lastShot > (ud.type === 'knife' ? 1200 : 1600)) {
+                shootBullet(false, en.position.clone().add(new THREE.Vector3(0, 1.5, 0)), playerGroup.position.clone().sub(en.position).normalize(), ud.type === 'knife' ? 'knife' : 'bullet');
                 ud.lastShot = Date.now();
             }
         }
