@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazonas: O Eco do Artefato - Protótipo</title>
+    <title>Amazon: Echo of the Artifact - Protocol</title>
     <style>
         body {
             margin: 0;
@@ -59,21 +59,24 @@
 
 <body>
     <div id="ui-layer">
-        <h1>Amazonas: O Eco do Artefato</h1>
-        <p>Status: Lucas "Lobo" em campo</p>
+        <h1>Amazon: Echo of the Artifact</h1>
+        <p>Status: Luke "Wolf" in field</p>
         <div id="health-container">
             <div id="health-bar"></div>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.9rem; color: #fbbf24;">
+            Mission Deaths: <span id="death-count-hud">0</span> | Kills: <span id="kill-count-hud">0</span>
         </div>
     </div>
 
     <!-- Tela de Início / Clique para Jogar -->
     <div id="start-screen"
         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; cursor: pointer;">
-        <h2 style="font-size: 3rem; margin-bottom: 10px;">PRONTO PARA A INFILTRAÇÃO?</h2>
-        <p style="font-size: 1.5rem; color: #4ade80;">Clique em qualquer lugar para começar</p>
+        <h2 style="font-size: 3rem; margin-bottom: 10px;">READY FOR INFILTRATION?</h2>
+        <p style="font-size: 1.5rem; color: #4ade80;">Click anywhere to start</p>
         <div style="margin-top: 30px; text-align: center; font-size: 0.9rem; opacity: 0.8;">
-            <b>WASD</b>: Mover | <b>Mouse</b>: Olhar/Atirar<br>
-            A missão começa em breve...
+            <b>WASD</b>: Move | <b>Mouse</b>: Look/Shoot<br>
+            The mission begins soon...
         </div>
     </div>
 
@@ -85,15 +88,15 @@
     <!-- Tela de Game Over -->
     <div id="game-over"
         style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; flex-direction: column; align-items: center; justify-content: center; z-index: 100;">
-        <h1 style="color: #ef4444; font-size: 4rem;">MISSÃO FRACASSADA</h1>
-        <p>Lucas "Lobo" caiu em combate. Reposicionando em campo...</p>
+        <h1 style="color: #ef4444; font-size: 4rem;">MISSION FAILED</h1>
+        <p>Luke "Wolf" fell in combat. Repositioning in field...</p>
         <button onclick="resetGame()"
-            style="margin-top: 20px; padding: 10px 20px; font-size: 1.2rem; cursor: pointer; background: #166534; color: white; border: none; border-radius: 4px;">Tentar
-            Novamente</button>
+            style="margin-top: 20px; padding: 10px 20px; font-size: 1.2rem; cursor: pointer; background: #166534; color: white; border: none; border-radius: 4px;">Try
+            Again</button>
     </div>
     <div class="controls-hint">
-        <b>WASD</b>: Mover | <b>Mouse</b>: Olhar/Girar<br>
-        <b>Clique Esquerdo</b>: Atirar | <b>Esc</b>: Liberar Mouse
+        <b>WASD</b>: Move | <b>Mouse</b>: Look/Rotate<br>
+        <b>Left Click</b>: Shoot | <b>Esc</b>: Release Mouse
     </div>
 
     <!-- Importando Three.js Globalmente para permitir teste local direto -->
